@@ -58,9 +58,12 @@ class Photo2Cartoon:
         return cartoon
 
 
+c2p = Photo2Cartoon()
+
+
 def gen_cartoon(photo_path, result_filename_path, make_up_id):
     img = cv2.cvtColor(cv2.imread(photo_path), cv2.COLOR_BGR2RGB)
-    c2p = Photo2Cartoon()
+    # c2p = Photo2Cartoon()
     cartoon = c2p.inference(img)
     if cartoon is not None:
         cv2.imwrite(result_filename_path, cartoon)

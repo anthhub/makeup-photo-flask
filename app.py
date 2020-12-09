@@ -34,9 +34,9 @@ def async_cartoon_task(img_path, result_filename_path):
         gen_cartoon(img_path, result_filename_path, "0")
 
 
-def async_makeup_task(img_path, result_filename_prefix_path):
+def async_makeup_task(img_path, result_filename_prefix_path, pool):
     print("async_makeup_task")
-    gen_makeup_all(img_path, result_filename_prefix_path)
+    gen_makeup_all(img_path, result_filename_prefix_path, pool)
 
 
 def allowed_file(filename):
@@ -86,17 +86,19 @@ def api_gen():
         if os.path.exists(result_filename_path):
             return jsonify({"success": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
 
+        pool = None
+
         if target_id == "0" or target_id == 0:
             gen_cartoon(tmp_img_path, result_filename_path, target_id)
         else:
-            gen_makeup(tmp_img_path, result_filename_path, target_id)
+            pool = gen_makeup(tmp_img_path, result_filename_path, target_id)
 
         # 发布异步任务 生成其他模式图片
         executor.submit(async_cartoon_task, tmp_img_path,
-                        result_filename_prefix_path + "__0" + ext)
+                        result_filename_prefix_path + "__0." + ext)
 
         executor.submit(async_makeup_task, tmp_img_path,
-                        result_filename_prefix_path)
+                        result_filename_prefix_path, pool)
 
         return jsonify({"status": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
 
