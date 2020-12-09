@@ -64,7 +64,9 @@ def api_gen():
 
     if f and allowed_file(f.filename):
         fname = secure_filename(f.filename)
-        ext = fname.rsplit('.', 1)[1]
+        # ext = fname.rsplit('.', 1)[1]
+
+        ext = "png"
 
         highfreq_factor = 1
         hash_size = 8
