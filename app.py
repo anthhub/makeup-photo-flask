@@ -11,6 +11,20 @@ import imagehash
 from makeup.main import gen_makeup, gen_makeup_all
 from cartoon.main import gen_cartoon
 from concurrent.futures import ThreadPoolExecutor
+
+
+from tornado.wsgi import WSGIContainer
+from tornado.httpserver import HTTPServer
+from tornado import ioloop
+
+import logging
+
+
+LOG = logging.getLogger(__name__)
+
+max_body_size = 800000000
+
+
 executor = ThreadPoolExecutor(max_workers=100)
 
 base_url = "http://10.180.9.102:5000"
@@ -86,6 +100,7 @@ def api_gen():
             result_file_dir, str(hash1))
 
         if os.path.exists(result_filename_path):
+            print("hit storage: " + result_filename_path)
             return jsonify({"success": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
 
         pool = None
@@ -167,7 +182,16 @@ def download(filename):
         pass
 
 
-app.run(host="0.0.0.0", port=5000)
+# app.run(host="0.0.0.0", port=5000)
 
 # if __name__ == '__main__':
 #     app.run(host="0.0.0.0",port=8090)
+port = 5000
+bind = "0.0.0.0"
+
+http_server = HTTPServer(WSGIContainer(app), max_body_size=max_body_size)
+http_server.listen(port, address=bind)
+LOG.info('Listening on http://{}:{}'.format(bind, port))
+print('Listening on http://{}:{}'.format(bind, port))
+
+ioloop.IOLoop.instance().start()
