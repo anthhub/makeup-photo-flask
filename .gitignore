@@ -1,0 +1,9 @@
+.DS_Store
+model/
+models/
+.idea/
+__pycache__/
+result/
+upload/
+images/
+imgs/
