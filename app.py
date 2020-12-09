@@ -11,7 +11,7 @@ import imagehash
 from makeup.main import gen_makeup, gen_makeup_all
 from cartoon.main import gen_cartoon
 from concurrent.futures import ThreadPoolExecutor
-executor = ThreadPoolExecutor(max_workers=10)
+executor = ThreadPoolExecutor(max_workers=100)
 
 base_url = "http://10.180.9.102:5000"
 
@@ -31,7 +31,7 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'JPG', 'PNG', 'gif', 'GIF'])
 def async_cartoon_task(img_path, result_filename_path):
     print("async_cartoon_task")
     if not os.path.exists(result_filename_path):
-        gen_cartoon(img_path, result_filename_path, "cartoon")
+        gen_cartoon(img_path, result_filename_path, "0")
 
 
 def async_makeup_task(img_path, result_filename_prefix_path):
@@ -51,7 +51,6 @@ def hello_world():
 # 通过上传的图片 生成新图片
 @app.route('/gen_photo', methods=['POST'], strict_slashes=False)
 def api_gen():
-
     result_file_dir = os.path.join(basedir, app.config['RESULT_FOLDER'])
     upload_file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
     if not os.path.exists(result_file_dir):
@@ -87,14 +86,14 @@ def api_gen():
         if os.path.exists(result_filename_path):
             return jsonify({"success": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
 
-        if target_id == "cartoon":
+        if target_id == "0" or target_id == 0:
             gen_cartoon(tmp_img_path, result_filename_path, target_id)
         else:
             gen_makeup(tmp_img_path, result_filename_path, target_id)
 
         # 发布异步任务 生成其他模式图片
         executor.submit(async_cartoon_task, tmp_img_path,
-                        result_filename_prefix_path + "__cartoon" + ext)
+                        result_filename_prefix_path + "__0" + ext)
 
         executor.submit(async_makeup_task, tmp_img_path,
                         result_filename_prefix_path)
@@ -108,30 +107,18 @@ def api_gen():
 # 上传文件
 @app.route('/up_photo', methods=['POST'], strict_slashes=False)
 def api_upload():
-    upload_file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(upload_file_dir):
-        os.makedirs(upload_file_dir)
     f = request.files['photo']
-    print(f)
+    makeup_id = request.form['makeup_id']
+
     if f and allowed_file(f.filename):
-        print(f.filename)
         fname = secure_filename(f.filename)
-        print(fname)
         ext = fname.rsplit('.', 1)[1]
-        new_filename = Pic_str().create_uuid() + '.' + ext
-        f.save(os.path.join(upload_file_dir, new_filename))
-        return jsonify({"status": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
+        new_filename = makeup_id + '.' + ext
+        f.save(os.path.join("makeup/imgs/makeup", new_filename))
+        return jsonify({"status": 0, "msg": "上传成功", "url": base_url + '/makeup/' + new_filename})
 
     else:
         return jsonify({"status": 1001, "msg": "上传失败"})
-
-
-@app.route('/download/<string:filename>', methods=['GET'])
-def download(filename):
-    if request.method == "GET":
-        if os.path.isfile(os.path.join('upload', filename)):
-            return send_from_directory('upload', filename, as_attachment=True)
-        pass
 
 
 # makeup photo
@@ -142,7 +129,7 @@ def makeup_photo(filename):
         if filename is None:
             pass
         else:
-            image_data = open(os.path.join(upload_file_dir, '%s' %
+            image_data = open(os.path.join("makeup/imgs/makeup", '%s' %
                                            filename), "rb").read()
             response = make_response(image_data)
             response.headers['Content-Type'] = 'image/png'
@@ -165,6 +152,14 @@ def result_photo(filename):
             response.headers['Content-Type'] = 'image/png'
             return response
     else:
+        pass
+
+
+@app.route('/download/<string:filename>', methods=['GET'])
+def download(filename):
+    if request.method == "GET":
+        if os.path.isfile(os.path.join('upload', filename)):
+            return send_from_directory('upload', filename, as_attachment=True)
         pass
 
 
