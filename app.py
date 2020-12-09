@@ -11,7 +11,7 @@ import imagehash
 from makeup.main import gen_makeup, gen_makeup_all
 from cartoon.main import gen_cartoon
 from concurrent.futures import ThreadPoolExecutor
-
+import glob
 
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
@@ -76,6 +76,12 @@ def api_gen():
     f = request.files['photo']
     target_id = request.form['target_id']
 
+    if not target_id == "0":
+        makeups = glob.glob(os.path.join(basedir, "makeup",
+                                         'imgs', 'makeup', target_id + '.*'))
+        if len(makeups) == 0:
+            return jsonify({"status": 1000, "msg": "缺失妆面图"})
+
     if f and allowed_file(f.filename):
         fname = secure_filename(f.filename)
         # ext = fname.rsplit('.', 1)[1]
@@ -101,11 +107,11 @@ def api_gen():
 
         if os.path.exists(result_filename_path):
             print("hit storage: " + result_filename_path)
-            return jsonify({"success": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
+            return jsonify({"status": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
 
         pool = None
 
-        if target_id == "0" or target_id == 0:
+        if target_id == "0":
             gen_cartoon(tmp_img_path, result_filename_path, target_id)
         else:
             pool = gen_makeup(tmp_img_path, result_filename_path, target_id)
