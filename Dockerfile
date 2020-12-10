@@ -16,7 +16,7 @@ RUN pip3 install -r /app/requirements.txt
 WORKDIR /app
 
 EXPOSE 8000 5000
-CMD ["python", "/app/app.py"]
+CMD ["python3", "/app/app.py"]
 
 # 基于python3.6.8镜像
 # FROM python:3.6.8
