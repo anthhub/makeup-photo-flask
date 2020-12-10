@@ -40,7 +40,8 @@ def gen_makeup(img_path, result_filename_path, make_up_id):
     Y = graph.get_tensor_by_name('Y:0')
     Xs = graph.get_tensor_by_name('generator/xs:0')
 
-    makeups = glob.glob(os.path.join(basedir, 'imgs', 'makeup', make_up_id +'.*'))
+    makeups = glob.glob(os.path.join(
+        basedir, 'imgs', 'makeup', make_up_id + '.*'))
 
     makeup = cv2.resize(
         imread(makeups[0]), (img_size, img_size))
@@ -77,7 +78,9 @@ def gen_makeup_all(img_path, result_filename_prefix_path, pool):
 
         pool = {"Xs": Xs, "X_img": X_img, "sess": sess, "X": X, "Y": Y}
 
-    makeups = glob.glob(os.path.join(basedir, 'imgs', 'makeup', '*.*'))
+    makeups = glob.glob(os.path.join(
+        basedir, 'imgs', 'makeup', '[0-9]*.*'))
+    print("makeups", len(makeups), makeups)
 
     for i in range(len(makeups)):
         item = makeups[i]
