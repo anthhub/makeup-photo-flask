@@ -1,5 +1,6 @@
 # encoding:utf-8
 # !/usr/bin/env python
+import logging
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, jsonify, request, make_response, send_from_directory, abort
 import time
@@ -17,7 +18,9 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado import ioloop
 
-import logging
+
+pic_str = Pic_str()
+
 
 img_size = 256
 
@@ -117,7 +120,8 @@ def api_gen():
         hash_size = 8
         img_size = hash_size * highfreq_factor
 
-        tmp_img_path = os.path.join(upload_file_dir, fname)
+        tmp_img_path = os.path.join(
+            upload_file_dir, pic_str.create_uuid() + "_" + fname)
         f.save(tmp_img_path)
 
         trans_square(tmp_img_path)
