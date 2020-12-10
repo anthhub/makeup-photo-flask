@@ -12,13 +12,14 @@ from makeup.main import gen_makeup, gen_makeup_all
 from cartoon.main import gen_cartoon
 from concurrent.futures import ThreadPoolExecutor
 import glob
-
+import cv2
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado import ioloop
 
 import logging
 
+img_size = 256
 
 LOG = logging.getLogger(__name__)
 
@@ -39,9 +40,22 @@ app.config['RESULT_FOLDER'] = RESULT_FOLDER
 basedir = os.path.abspath(os.path.dirname(__file__))
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'JPG', 'PNG', 'gif', 'GIF'])
 
+
+# gen/up photo 图片裁剪, 得到方形图
+def trans_square(img_path):
+    img = cv2.imread(img_path)
+    height = img.shape[0]
+    width = img.shape[1]
+    size = min(height, width)
+    span = 0
+    if width > size:
+        span = round((width - size) / 2)
+    cropped = img[0:size, (0+span):(size+span)]
+    std = cv2.resize(cropped, (img_size, img_size))
+    cv2.imwrite(img_path, std)
+
+
 # 异步任务
-
-
 def async_cartoon_task(img_path, result_filename_path):
     print("async_cartoon_task")
     if not os.path.exists(result_filename_path):
@@ -55,6 +69,16 @@ def async_makeup_task(img_path, result_filename_prefix_path, pool):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+
+@app.errorhandler(400)
+def frontend_error(error):
+    return jsonify({"status": 1200, "msg": "参数错误:" + str(error)}), 400
+
+
+@app.errorhandler(500)
+def inner_error(error):
+    return jsonify({"status": 1300, "msg": "内部错误" + str(error)}), 500
 
 
 @app.route('/')
@@ -75,12 +99,13 @@ def api_gen():
 
     f = request.files['photo']
     target_id = request.form['target_id']
+    skip_storage = request.form.get("skip_storage", "0")
 
     if not target_id == "0":
         makeups = glob.glob(os.path.join(basedir, "makeup",
                                          'imgs', 'makeup', target_id + '.*'))
         if len(makeups) == 0:
-            return jsonify({"status": 1000, "msg": "缺失妆面图"})
+            return jsonify({"status": 1000, "msg": "缺失妆面图"}), 400
 
     if f and allowed_file(f.filename):
         fname = secure_filename(f.filename)
@@ -95,6 +120,8 @@ def api_gen():
         tmp_img_path = os.path.join(upload_file_dir, fname)
         f.save(tmp_img_path)
 
+        trans_square(tmp_img_path)
+
         hash1 = imagehash.phash(Image.open(
             tmp_img_path), hash_size=hash_size, highfreq_factor=highfreq_factor)
 
@@ -105,7 +132,7 @@ def api_gen():
         result_filename_prefix_path = os.path.join(
             result_file_dir, str(hash1))
 
-        if os.path.exists(result_filename_path):
+        if skip_storage == "0" and os.path.exists(result_filename_path):
             print("hit storage: " + result_filename_path)
             return jsonify({"status": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
 
@@ -126,7 +153,7 @@ def api_gen():
         return jsonify({"status": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
 
     else:
-        return jsonify({"status": 1001, "msg": "上传失败"})
+        return jsonify({"status": 1001, "msg": "图片格式错误"}), 400
 
 
 # 上传文件
@@ -139,11 +166,13 @@ def api_upload():
         fname = secure_filename(f.filename)
         ext = fname.rsplit('.', 1)[1]
         new_filename = makeup_id + '.' + ext
-        f.save(os.path.join("makeup/imgs/makeup", new_filename))
+        path = os.path.join("makeup/imgs/makeup", new_filename)
+        f.save(path)
+        trans_square(path)
         return jsonify({"status": 0, "msg": "上传成功", "url": base_url + '/makeup/' + new_filename})
 
     else:
-        return jsonify({"status": 1001, "msg": "上传失败"})
+        return jsonify({"status": 1001, "msg": "图片格式错误"}), 400
 
 
 # makeup photo
