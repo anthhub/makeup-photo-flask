@@ -77,7 +77,7 @@ def gen_makeup_all(img_path, result_filename_prefix_path, pool):
 
         pool = {"Xs": Xs, "X_img": X_img, "sess": sess, "X": X, "Y": Y}
 
-    makeups = glob.glob(os.path.join(basedir, 'imgs', 'makeup', '[1-8].*'))
+    makeups = glob.glob(os.path.join(basedir, 'imgs', 'makeup', '*.*'))
 
     for i in range(len(makeups)):
         item = makeups[i]

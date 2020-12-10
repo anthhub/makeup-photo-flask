@@ -19,6 +19,13 @@ from tornado.httpserver import HTTPServer
 from tornado import ioloop
 
 
+import socket
+hostname = socket.gethostname()
+print(hostname)
+ip = socket.gethostbyname(hostname)
+print(ip)
+
+
 pic_str = Pic_str()
 
 
@@ -31,7 +38,7 @@ max_body_size = 800000000
 
 executor = ThreadPoolExecutor(max_workers=100)
 
-base_url = "http://10.180.9.102:5000"
+base_url = "http://" + ip + ":5000"
 
 
 app = Flask(__name__)
@@ -221,10 +228,6 @@ def download(filename):
         pass
 
 
-# app.run(host="0.0.0.0", port=5000)
-
-# if __name__ == '__main__':
-#     app.run(host="0.0.0.0",port=8090)
 port = 5000
 bind = "0.0.0.0"
 
