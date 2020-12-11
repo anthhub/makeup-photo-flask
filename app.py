@@ -36,9 +36,13 @@ LOG = logging.getLogger(__name__)
 max_body_size = 800000000
 
 
-executor = ThreadPoolExecutor(max_workers=100)
+executor = ThreadPoolExecutor(max_workers=1)
 
-base_url = "http://" + ip + ":5000"
+# https://hackthon-tutu.thellsapi.com/
+
+base_url = 'https://hackthon-tutu.thellsapi.com'
+
+# base_url = "http://" + ip + ":5000"
 
 
 app = Flask(__name__)
@@ -87,8 +91,21 @@ def frontend_error(error):
 
 
 @app.errorhandler(500)
-def inner_error(error):
+def inner_error1(error):
+    print("500")
     return jsonify({"status": 1300, "msg": "内部错误" + str(error)}), 500
+
+
+@app.errorhandler(502)
+def inner_error2(error):
+    print("502")
+    return jsonify({"status": 1300, "msg": "内部错误" + str(error)}), 502
+
+
+@app.errorhandler(503)
+def inner_error3(error):
+    print("503")
+    return jsonify({"status": 1300, "msg": "内部错误" + str(error)}), 503
 
 
 @app.route('/')
@@ -99,6 +116,8 @@ def hello_world():
 # 通过上传的图片 生成新图片
 @app.route('/gen_photo', methods=['POST'], strict_slashes=False)
 def api_gen():
+    print("gen_photo")
+
     result_file_dir = os.path.join(basedir, app.config['RESULT_FOLDER'])
     upload_file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
     if not os.path.exists(result_file_dir):
@@ -155,11 +174,11 @@ def api_gen():
             pool = gen_makeup(tmp_img_path, result_filename_path, target_id)
 
         # 发布异步任务 生成其他模式图片
-        executor.submit(async_cartoon_task, tmp_img_path,
-                        result_filename_prefix_path + "__0." + ext)
+        # executor.submit(async_cartoon_task, tmp_img_path,
+        #                 result_filename_prefix_path + "__0." + ext)
 
-        executor.submit(async_makeup_task, tmp_img_path,
-                        result_filename_prefix_path, pool)
+        # executor.submit(async_makeup_task, tmp_img_path,
+        #                 result_filename_prefix_path, pool)
 
         return jsonify({"status": 0, "msg": "上传成功", "url": base_url + '/result/' + new_filename})
 
@@ -170,6 +189,7 @@ def api_gen():
 # 上传文件
 @app.route('/up_photo', methods=['POST'], strict_slashes=False)
 def api_upload():
+    print("api_upload")
     f = request.files['photo']
     makeup_id = request.form['makeup_id']
 
@@ -189,6 +209,7 @@ def api_upload():
 # makeup photo
 @app.route('/makeup/<string:filename>', methods=['GET'])
 def makeup_photo(filename):
+    print("makeup_photo")
     upload_file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
     if request.method == 'GET':
         if filename is None:
@@ -206,6 +227,7 @@ def makeup_photo(filename):
 # result photo
 @app.route('/result/<string:filename>', methods=['GET'])
 def result_photo(filename):
+    print("result_photo")
     upload_file_dir = os.path.join(basedir, app.config['RESULT_FOLDER'])
     if request.method == 'GET':
         if filename is None:
@@ -237,3 +259,6 @@ LOG.info('Listening on http://{}:{}'.format(bind, port))
 print('Listening on http://{}:{}'.format(bind, port))
 
 ioloop.IOLoop.instance().start()
+
+
+print("Starting")

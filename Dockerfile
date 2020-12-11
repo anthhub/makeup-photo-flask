@@ -1,19 +1,19 @@
-FROM ubuntu:18.04
+FROM yoyo_pytest:v11
 
-RUN apt-get update &&  apt-get -y install ca-certificates python3.6 python3-pip cmake &&\ 
-    apt-get clean && rm -rf /var/lib/apt/lists/*  && mkdir -p /root/.pip
+# RUN apt-get update &&  apt-get -y install ca-certificates python3.6 python3-pip cmake &&\ 
+#     apt-get clean && rm -rf /var/lib/apt/lists/*  && mkdir -p /root/.pip
 
-RUN pip3 install scikit-build
+# RUN pip3 install scikit-build
 
-COPY cartoon  /app/cartoon   
-COPY makeup  /app/makeup   
-COPY strUtil.py /app
-COPY app.py /app
+COPY cartoon  /cartoon   
+COPY makeup  /makeup   
+COPY strUtil.py /
+COPY app.py /
 COPY pip.conf /root/.pip/pip.conf    
-COPY requirements.txt /app/requirements.txt
+COPY requirements.txt /requirements.txt
 
-RUN pip3 install -r /app/requirements.txt
-WORKDIR /app
+# RUN pip3 install -r /app/requirements.txt
+WORKDIR /
 
 EXPOSE 8000 5000
 CMD ["python3", "/app/app.py"]
